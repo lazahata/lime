@@ -46,12 +46,7 @@ class ViewController: UIViewController {
         if let device = device {
             do {
                 try device.lockForConfiguration()
-                //                let minDuration = device.activeFormat.minExposureDuration
-                //                let maxDuration = device.activeFormat.maxExposureDuration
-                let duration = CMTimeMake(value: 15, timescale: 30000)
-                //                if (duration < minDuration) { duration = minDuration }
-                //                if (duration > maxDuration) { duration = maxDuration }
-                print(device.activeFormat.minExposureDuration)
+                let duration = device.activeFormat.minExposureDuration
                 device.setExposureModeCustom(duration: duration, iso: device.activeFormat.maxISO) { CMTime in }
                 device.focusMode = AVCaptureDevice.FocusMode.continuousAutoFocus
                 device.unlockForConfiguration()
@@ -80,9 +75,11 @@ class ViewController: UIViewController {
         if let device = device {
             do {
                 try device.lockForConfiguration()
-                let scale = Int32(30000 + (slider.value * 800000))
-                print(scale)
-                device.setExposureModeCustom(duration: CMTimeMake(value: 15, timescale: scale), iso: device.activeFormat.maxISO) { CMTime in
+                let minDuration = device.activeFormat.minExposureDuration
+                let value = minDuration.value + minDuration.value * Int64(slider.value * 100)
+                let myDuration = CMTimeMake(value: value, timescale: minDuration.timescale)
+                print(myDuration)
+                device.setExposureModeCustom(duration: myDuration, iso: device.activeFormat.maxISO) { CMTime in
                 }
                 device.unlockForConfiguration()
             } catch {}
