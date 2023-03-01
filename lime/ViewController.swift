@@ -11,7 +11,8 @@ import AVFoundation
 class ViewController: UIViewController {
     
     var mainView: MainView? = nil
-
+    var device: AVCaptureDevice? = nil
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         self.view.backgroundColor = .systemBackground
@@ -19,12 +20,13 @@ class ViewController: UIViewController {
         if let mainView = mainView {
             mainView.frame = UIScreen.main.bounds
             self.view.addSubview(mainView)
+            setUpSlider()
         }
         Task {
             await setUpCaptureSession()
         }
     }
-
+    
     var isAuthorized: Bool {
         get async {
             let status = AVCaptureDevice.authorizationStatus(for: .video)
@@ -40,17 +42,18 @@ class ViewController: UIViewController {
         guard await isAuthorized else { return }
         let captureSession = AVCaptureSession()
         
-        let device = AVCaptureDevice.default(for: .video)
+        device = AVCaptureDevice.default(for: .video)
         if let device = device {
             do {
                 try device.lockForConfiguration()
-//                let minDuration = device.activeFormat.minExposureDuration
-//                let maxDuration = device.activeFormat.maxExposureDuration
-                let duration = CMTimeMake(value: 1, timescale: 1500)
-//                if (duration < minDuration) { duration = minDuration }
-//                if (duration > maxDuration) { duration = maxDuration }
-                device.setFocusModeLocked(lensPosition: 1) { CMTime in }
+                //                let minDuration = device.activeFormat.minExposureDuration
+                //                let maxDuration = device.activeFormat.maxExposureDuration
+                let duration = CMTimeMake(value: 15, timescale: 30000)
+                //                if (duration < minDuration) { duration = minDuration }
+                //                if (duration > maxDuration) { duration = maxDuration }
+                print(device.activeFormat.minExposureDuration)
                 device.setExposureModeCustom(duration: duration, iso: device.activeFormat.maxISO) { CMTime in }
+                device.focusMode = AVCaptureDevice.FocusMode.continuousAutoFocus
                 device.unlockForConfiguration()
                 guard
                     let videoDeviceInput = try? AVCaptureDeviceInput(device: device), captureSession.canAddInput(videoDeviceInput)
@@ -65,4 +68,25 @@ class ViewController: UIViewController {
             } catch {}
         }
     }
+    
+    func setUpSlider() {
+        let slider = UISlider()
+        slider.frame = CGRect(x: 30, y: self.view.bounds.height * 2 / 3, width: self.view.bounds.width - 60, height: 60)
+        slider.addTarget(self, action: #selector(xxx), for: UIControl.Event.valueChanged)
+        self.view.addSubview(slider)
+    }
+    
+    @objc func xxx(slider: UISlider) {
+        if let device = device {
+            do {
+                try device.lockForConfiguration()
+                let scale = Int32(30000 + (slider.value * 800000))
+                print(scale)
+                device.setExposureModeCustom(duration: CMTimeMake(value: 15, timescale: scale), iso: device.activeFormat.maxISO) { CMTime in
+                }
+                device.unlockForConfiguration()
+            } catch {}
+        }
+    }
 }
+
